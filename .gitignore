@@ -1,0 +1,25 @@
+# 编译产物
+/cs2hi.exe
+*.exe
+*.dll
+*.o
+*.a
+
+# 运行日志
+*.log
+
+# 分析/渲染输出
+/output/
+
+# 第三方工具链（HLAE + FFmpeg，首次渲染时自动下载）
+/tools/hlae/
+
+# 渲染临时产物
+*.tga
+*.tmp
+
+# 编辑器/系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

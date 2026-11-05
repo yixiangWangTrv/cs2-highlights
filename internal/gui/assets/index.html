@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cs2hi — CS2 集锦工坊</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon.png" type="image/png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- 液态玻璃动态背景光斑 -->
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="bg-noise"></div>
+</div>
+
+<main class="app">
+  <!-- 页面横向滑动容器：4 个步骤页并排成条，视口裁剪后 translateX 左右滑动切换 -->
+  <div class="pages-viewport" id="pagesViewport">
+    <div class="pages" id="pages">
+  <!-- 步骤 1：选择 demo -->
+  <section class="page card glass active" data-card="cardDemo">
+    <div class="card-head">
+      <h2>选择 Demo 文件</h2>
+    </div>
+    <div class="demo-row">
+      <input id="demoPath" class="field" type="text" placeholder="demo 或压缩包路径，如 D:\demo\match.dem / match.zip" spellcheck="false">
+      <button class="btn icon-only" id="btnBrowse" title="浏览 demo 文件">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 6.5C3 5.4 3.9 4.5 5 4.5h4.2l2 2H19c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-11z" fill="currentColor"/></svg>
+      </button>
+      <button class="btn primary" id="btnParse" disabled>解析</button>
+    </div>
+    <div class="hint">支持 5E / 完美平台对战 demo（.dem / .zip / .rar / .7z / .dem.gz）；压缩包自动解压，解析只需几秒。</div>
+  </section>
+
+  <!-- 步骤 2：选择玩家 -->
+  <section class="page card glass" data-card="cardPlayers">
+    <div class="card-head">
+      <h2>选择玩家</h2>
+      <span class="match-info" id="matchInfo"></span>
+    </div>
+    <div class="player-groups" id="playerGrid"></div>
+  </section>
+
+  <!-- 步骤 3：查看玩家解析信息 -->
+  <section class="page card glass" data-card="cardInfo">
+    <div class="card-head">
+      <h2 id="infoTitle">玩家解析信息</h2>
+      <span class="match-info" id="infoMatch"></span>
+    </div>
+    <div id="infoBody"><div class="hint">选择玩家后展示其完整解析数据。</div></div>
+  </section>
+
+  <!-- 步骤 4：选择片段 + 渲染设置 -->
+  <section class="page card glass" data-card="cardClips">
+    <div class="card-head">
+      <h2>选择集锦片段</h2>
+      <div class="clip-tools">
+        <div class="seg" id="clipSortSeg">
+          <button class="seg-btn active" data-sort="score">按得分</button>
+          <button class="seg-btn" data-sort="round">按回合</button>
+        </div>
+        <button class="btn ghost" id="btnSelectAll">全选</button>
+        <button class="btn ghost" id="btnSelectNone">清空</button>
+        <span class="sel-count" id="selCount"></span>
+      </div>
+    </div>
+    <div class="clip-list" id="clipList"></div>
+
+    <div class="settings-grid">
+      <label class="set-item"><span>输出目录</span>
+        <div class="dir-row">
+          <input id="outDir" class="field" type="text" placeholder="留空 = demo 所在目录（将在所选目录下自动创建子文件夹）" spellcheck="false">
+          <button class="btn ghost icon-only" id="btnOutDirBrowse" title="选择输出目录">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 6.5C3 5.4 3.9 4.5 5 4.5h4.2l2 2H19c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-11z" fill="currentColor"/></svg>
+          </button>
+        </div></label>
+      <label class="set-item"><span>分辨率</span>
+        <select id="res" class="field">
+          <option value="1920x1080">1920×1080（1080p）</option>
+          <option value="1280x720">1280×720（720p，更快）</option>
+          <option value="2560x1440">2560×1440（2K）</option>
+        </select></label>
+      <label class="set-item"><span>帧率</span>
+        <select id="fps" class="field">
+          <option value="60">60 fps</option>
+          <option value="30">30 fps（体积更小）</option>
+          <option value="120">120 fps</option>
+        </select></label>
+      <label class="set-item"><span>画质（CRF）</span>
+        <select id="crf" class="field">
+          <option value="16">极佳（16，体积大）</option>
+          <option value="18" selected>优秀（18，推荐）</option>
+          <option value="20">良好（20，体积小）</option>
+        </select></label>
+      <label class="set-item"><span>视角</span>
+        <select id="view" class="field">
+          <option value="pov">第一人称</option>
+          <option value="third">第三人称跟随</option>
+          <option value="default">GOTV 导播</option>
+        </select></label>
+      <label class="set-item"><span>编码速度</span>
+        <select id="preset" class="field">
+          <option value="fast">快速</option>
+          <option value="medium" selected>平衡（推荐）</option>
+          <option value="slow">精细（更小体积）</option>
+        </select></label>
+    </div>
+    <label class="switch-row"><input type="checkbox" id="skipConcat" checked>
+      <span>只生成分片段视频（不合成单条成片，省时间；之后可手动合并）</span></label>
+    <div class="action-row">
+      <div class="disk-warn" id="diskWarn" hidden></div>
+      <button class="btn primary big" id="btnRender">开始渲染</button>
+    </div>
+
+    <!-- 已渲染视频历史区：输出目录中所有已存在的视频，按目录分组展示 -->
+    <div class="history">
+      <div class="history-head">
+        <h3>🎬 已渲染视频</h3>
+        <div class="history-tools">
+          <select id="historySort" class="field small">
+            <option value="time">最新在前</option>
+            <option value="size">最大在前</option>
+            <option value="name">按名称</option>
+          </select>
+          <button class="btn ghost" id="btnBatchDelete">批量删除</button>
+          <button class="btn ghost" id="btnOpenDir">打开输出目录</button>
+        </div>
+      </div>
+      <!-- 批量删除操作条：选择模式下显示 -->
+      <div class="batch-bar" id="batchBar" hidden>
+        <span class="batch-count" id="batchCount">已选 0 个</span>
+        <button class="btn ghost" id="btnBatchSelectAll">全选</button>
+        <button class="btn danger" id="btnBatchDelConfirm">删除所选</button>
+      </div>
+      <div class="done-list" id="historyList"></div>
+    </div>
+  </section>
+    </div>
+  </div>
+</main>
+
+<!-- 底部 Dock 导航（常显，macOS 风格）：4 个步骤入口 -->
+<nav class="dock" id="dockNav">
+  <button class="dock-btn active" id="dockDemo" data-card="cardDemo" title="步骤 1：选择 demo 并解析">
+    <span class="dock-ico">📁</span><span class="dock-label">选择 Demo</span>
+  </button>
+  <button class="dock-btn" id="dockPlayers" data-card="cardPlayers" title="步骤 2：选择要分析的玩家" disabled>
+    <span class="dock-ico">👥</span><span class="dock-label">选择用户</span>
+  </button>
+  <button class="dock-btn" id="dockInfo" data-card="cardInfo" title="步骤 3：查看玩家解析信息" disabled>
+    <span class="dock-ico">📊</span><span class="dock-label">解析信息</span>
+  </button>
+  <button class="dock-btn" id="dockClips" data-card="cardClips" title="步骤 4：选择集锦片段、渲染与查看成片" disabled>
+    <span class="dock-ico">🎬</span><span class="dock-label">渲染集锦</span>
+  </button>
+</nav>
+
+<!-- 渲染进度弹窗（悬浮在选择片段界面之上） -->
+<div class="modal" id="progressModal" hidden>
+  <div class="modal-card glass progress-card">
+    <div class="modal-head">
+      <h2>渲染中</h2>
+      <button class="icon-btn" id="btnProgressClose" title="最小化到后台" hidden>—</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-ring" id="ring">
+        <svg viewBox="0 0 120 120">
+          <defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#0A84FF"/><stop offset="1" stop-color="#BF5AF2"/>
+          </linearGradient></defs>
+          <circle class="ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="ring-text"><span id="ringPct">0%</span><small id="ringStage">准备中</small></div>
+      </div>
+      <div class="progress-detail">
+        <p id="progressDetail">正在初始化…</p>
+        <div class="log-box" id="logBox"></div>
+      </div>
+    </div>
+    <!-- 结构化进度：轮次 / 全局片段序号 / 当前片段帧进度 -->
+    <div class="progress-meta">
+      <div class="pm-item"><span class="pm-v" id="pmPass">—</span><span class="pm-k">当前轮次</span></div>
+      <div class="pm-item"><span class="pm-v" id="pmClip">— / —</span><span class="pm-k">全部片段</span></div>
+      <div class="pm-item"><span class="pm-v" id="pmPartial">—</span><span class="pm-k">当前片段</span></div>
+    </div>
+    <div class="action-row">
+      <button class="btn danger" id="btnCancel" hidden>取消渲染</button>
+    </div>
+  </div>
+</div>
+
+<!-- 视频播放弹窗：应用内全屏播放器，标题/关闭按钮浮在视频上方 -->
+<div class="modal" id="videoModal" hidden>
+  <div class="video-card">
+    <div class="video-top">
+      <h2 id="videoTitle">视频预览</h2>
+      <button class="icon-btn light" id="btnVideoClose" title="关闭">✕</button>
+    </div>
+    <video id="videoPlayer" controls autoplay></video>
+    <!-- 上一个 / 下一个：在历史视频列表内直接切换，无需退出预览 -->
+    <button class="video-nav prev" id="btnVideoPrev" title="上一个视频（←）" hidden>‹</button>
+    <button class="video-nav next" id="btnVideoNext" title="下一个视频（→）" hidden>›</button>
+  </div>
+</div>
+
+<!-- 确认弹窗（玻璃风格，替代浏览器原生 confirm） -->
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-card glass confirm-card">
+    <div class="modal-head">
+      <h2 id="confirmTitle">确认操作</h2>
+      <button class="icon-btn" id="btnConfirmClose" title="关闭">✕</button>
+    </div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="action-row">
+      <button class="btn ghost" id="btnConfirmCancel">取消</button>
+      <button class="btn danger" id="btnConfirmOk">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 文件浏览器弹窗（标准文件对话框布局：右上角关闭、路径栏左侧上级目录） -->
+<div class="modal" id="browser" hidden>
+  <div class="modal-card glass">
+    <div class="modal-head">
+      <h2 id="browserTitle">选择 Demo 文件</h2>
+      <button class="icon-btn" id="btnBrowserClose" title="关闭">✕</button>
+    </div>
+    <input type="text" class="browser-path" id="browserPath" placeholder="输入或粘贴目录路径，回车跳转" spellcheck="false">
+    <div class="browser-toolbar">
+      <span class="browser-hint">双击目录进入</span>
+      <button class="btn ghost" id="btnBrowserUp">← 上级目录</button>
+    </div>
+    <div class="browser-list" id="browserList"></div>
+    <div class="browser-foot">
+      <span class="browser-hint" id="browserHint">单击 demo 文件即选择</span>
+      <button class="btn primary" id="btnBrowserPick" hidden>选择此目录</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
